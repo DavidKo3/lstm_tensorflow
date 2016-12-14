@@ -1,56 +1,70 @@
-#refer https://github.com/nlintz/TensorFlow-Tutorials/blob/master/07_lstm.py
+'''
+A Recurrent Neural Network (LSTM) implementation example using TensorFlow library.
+This example is using the MNIST database of handwritten digits (http://yann.lecun.com/exdb/mnist/)
+Long Short Term Memory paper: http://deeplearning.cs.cmu.edu/pdfs/Hochreiter97_lstm.pdf
+Author: Aymeric Damien
+Project: https://github.com/aymericdamien/TensorFlow-Examples/
+'''
+
+from __future__ import print_function
+
 import tensorflow as tf
+from tensorflow.python.ops import rnn, rnn_cell
 
-import numpy as np
+# Import MNIST data
 from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
-# configuration
-#                        O * W + b -> 10 labels for each image, O[? 28], W[28 10], B[10]
-#                       ^ (O: output 28 vec from 28 vec input)
-#                       |
-#      +-+  +-+       +--+
-#      |1|->|2|-> ... |28| time_step_size = 28
-#      +-+  +-+       +--+
-#       ^    ^    ...  ^
-#       |    |         |
-# img1:[28] [28]  ... [28]
-# img2:[28] [28]  ... [28]
-# img3:[28] [28]  ... [28]
-# ...
-# img128 or img256 (batch_size or test_size 256)
-#      each input size = input_vec_size=lstm_size=28
+'''
+To classify images using a recurrent neural network, we consider every image
+row as a sequence of pixels. Because MNIST image shape is 28*28px, we will then
+handle 28 sequences of 28 steps for every sample.
+'''
 
-# configuration variables
-input_vec_size = lstm_size = 28
-time_step_size = 28
-
+# Parameters
+learning_rate = 0.001
+training_iters = 100000
 batch_size = 128
-test_size = 256
+display_step = 10
 
+# Network Parameters
+n_input = 28 # MNIST data input (img shape: 28*28)
+n_steps = 28 # timesteps
+n_hidden = 128 # hidden layer num of features
+n_classes = 10 # MNIST total classes (0-9 digits)
 
-def init_weights(shape):
-    return tf.Variable(tf.random_normal(shape, stdev=0.01))
+# tf Graph input
+x = tf.placeholder("float", [None, n_steps, n_input])
+y = tf.placeholder("float", [None, n_classes])
 
-def model(X, W, B, lstm_size):
-    # X, input shape: (batch_size, time_step_size, input_vec_size)
-    XT = tf.transpose(X, [ 1,0,2]) # permute time_step_size and batch_size
-    # XT shape: (time_step_size, batch_size, input_vec_size)
-    XR = tf.reshape(XT, [-1, lstm_size]) # each row has input for each lstm cell (lstm_size=input_vec_size)
+# Define weights
+weights = {
+    'out': tf.Variable(tf.random_normal([n_hidden, n_classes]))
+}
+biases = {
+    'out': tf.Variable(tf.random_normal([n_classes]))
+}
+
+def RNN( X, weights, biases):
+    
+    # Prepare data shape to match 'rnn' function requirements
+    # Current data input shape: (batch_size , n_steps, n_input)
+    # Required shape : 'n_steps' tensors list of shape (batch_size, n_input)
+    
+    # Permuting batch_size and n_steps
+    X = tf.transpose(x, [1, 0 , 2]) # ( n_steps, batch_size , n_input)
+    # Reshaping to (n_steps*batch_size , n_input)
+    X = tf.reshape(x , [-1, n_input])
+    # Split to get a list of 'n_steps' tensors of shape (batch_size, n_input)
+    X = tf.split(0, n_steps, X)
+   
+   # Define a lstm cell with tensorflow
+    lstm_cell = rnn_cell.BasicLSTMCell(n_hidden, forget_bias=1.0)
+    
+    # Get lstm cell output
+    outputs, states = rnn.rnn(lstm_cell,  x, dtype = tf.float32)
     
     
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    
